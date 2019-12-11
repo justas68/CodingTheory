@@ -18,6 +18,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -176,8 +177,10 @@ public class PhotoFrame extends javax.swing.JFrame {
             try {
                 File selectedFile = jfc.getSelectedFile();
                 this.image = ImageIO.read(selectedFile);
+                
                 Image dimg = image.getScaledInstance(originalPicture.getWidth(), originalPicture.getHeight(),
                         Image.SCALE_SMOOTH);
+               
                originalPicture.setIcon(new ImageIcon(dimg));
                int byteSize = this.image.getHeight() * this.image.getWidth();
                int currentPosition = 0;
@@ -194,7 +197,7 @@ public class PhotoFrame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
-        private int[] sendImageNoEncoding(String image) {   
+        private String sendImageNoEncoding(String image) {   
         int sentBytes = 0;
         int bytesToSend = image.length();
         String receivedMessage = "";
@@ -219,32 +222,78 @@ public class PhotoFrame extends javax.swing.JFrame {
             receivedMessage += (new Vector(bytesArray)).getArrayAsString();  
             receivedMessage = receivedMessage.substring(0, receivedMessage.length() - zeroesAdded);
         }
-        return stringToPixels(receivedMessage);
+        return receivedMessage;
+    }
+        
+        private String sendMessaageWithEncoding(String image) {
+        int sentBytes = 0;
+        int bytesToSend = image.length();
+        String decodedMessage = "";
+        while (sentBytes <= bytesToSend - this.matrix.getRows()) {
+            String batch = image.substring(sentBytes, sentBytes + this.matrix.getRows());
+            Vector vectorToSend = new Vector(batch);
+            int[] bytesArray = vectorToSend.getArray();
+            int[] encodedArray = encoder.encode(bytesArray).getArray();
+            channel.sendMessage(encodedArray);
+            Vector decodedVector = this.decoder.decodeVector(new Vector(encodedArray));
+            decodedMessage += decodedVector.getArrayAsString();
+            sentBytes += this.matrix.getRows();
+        }
+        if (bytesToSend != sentBytes) {
+            String remainingMessage = image.substring(sentBytes);
+            int zeroesAdded = 0;
+            while (remainingMessage.length() < this.matrix.getRows()) {
+                remainingMessage += "0";
+                zeroesAdded++;
+            }
+            Vector vectorToSend = new Vector(remainingMessage);
+            int[] bytesArray = vectorToSend.getArray();
+            int[] encodedArray = encoder.encode(bytesArray).getArray();
+            channel.sendMessage(encodedArray);
+            Vector decodedVector = this.decoder.decodeVector(new Vector(encodedArray));
+            decodedMessage = decodedMessage.substring(0, decodedMessage.length() - zeroesAdded);
+            decodedMessage += decodedVector.getArrayAsString();  
+        }
+        return decodedMessage;
     }
         
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        
         double errorProbability = Double.parseDouble(jTextField1.getText());
         this.channel = new Channel(errorProbability);
-        System.out.println(pixelsToString(this.imagePixels));
-        int[] imageWithoutEncoding = sendImageNoEncoding(pixelsToString(this.imagePixels));
-        BufferedImage image1 = deepCopy(this.image);
+        int[] convertedLengths = new int[this.imagePixels.length];
+        String pixels = pixelsToString(this.imagePixels, convertedLengths);
+        
+        int[] imageWithEncoding = stringToPixels(sendMessaageWithEncoding(pixels), convertedLengths);
+        BufferedImage image2 = deepCopy(this.image);
         int currentPosition = 0;
         
         for (int i = 0; i < this.image.getWidth(); i++) {
             for (int j = 0; j < this.image.getHeight(); j++) {
-                this.image.setRGB(i, j, imageWithoutEncoding[currentPosition]);
+                image2.setRGB(i, j, imageWithEncoding[currentPosition]);
                 currentPosition++;
             }
         }
-
-        Image dimg = image1.getScaledInstance(originalPicture.getWidth(), originalPicture.getHeight(),
+        Image dimg2 = image2.getScaledInstance(originalPicture.getWidth(), originalPicture.getHeight(),
                        Image.SCALE_SMOOTH);
+        pictureWithEncoding.setIcon(new ImageIcon(dimg2));
         
-        //String imageWithEncoding = sendImageWithEncoding(imageBinary);
-        //byte[] imageWithEncodingSent = binaryToImage(imageWithEncoding);
         
-        pictureWithNoEncoding.setIcon(new ImageIcon(dimg));
-       // pictureWithEncoding.setIcon();
+        int[] imageWithoutEncoding = stringToPixels(sendImageNoEncoding(pixels), convertedLengths);
+        BufferedImage image1 = deepCopy(this.image);
+        currentPosition = 0;
+        
+        for (int i = 0; i < this.image.getWidth(); i++) {
+            for (int j = 0; j < this.image.getHeight(); j++) {
+                image1.setRGB(i, j, imageWithoutEncoding[currentPosition]);
+                currentPosition++;
+            }
+        }
+        Image dimg1 = image1.getScaledInstance(originalPicture.getWidth(), originalPicture.getHeight(),
+                       Image.SCALE_SMOOTH);
+        pictureWithNoEncoding.setIcon(new ImageIcon(dimg1));
+        
+        
     }//GEN-LAST:event_jButton2ActionPerformed
 
     
@@ -261,43 +310,24 @@ public class PhotoFrame extends javax.swing.JFrame {
     private javax.swing.JLabel pictureWithNoEncoding;
     // End of variables declaration//GEN-END:variables
     
-    private String imageToBinary(byte[] image) {
-        StringBuilder binary = new StringBuilder();
-        for (byte b : image) {
-            int val = b;
-            for (int i = 0; i < 8; i++) {
-                binary.append((val & 128) == 0 ? 0 : 1);
-                val <<= 1;
-            }
-        }
-        return binary.toString();
-    }
-    
-    private byte[] binaryToImage(String bytes) {
-        List<String> splitted = Arrays.asList(bytes.split("(?<=\\G.{8})"));
-        byte[] bytesArray = new byte[splitted.size()];
-        List<Integer> bytesList = splitted.stream().map(byteValue -> Integer.parseInt(byteValue, 2)).collect(Collectors.toList());
-        for (int i = 0; i < bytesList.size(); i++){
-            if (bytesList.get(i) < 127) {
-               bytesArray[i] = (byte)bytesList.get(i).byteValue();  
-            } else {
-               bytesArray[i] = (byte)(Integer.reverse(bytesList.get(i) << 24) & 0xff);
-            }          
-        }
-        return bytesArray;
-    }
-    
-    private String pixelsToString(int[] image) {
+    private String pixelsToString(int[] image, int[] convertedLengths) {
         String result = "";
         for (int i = 0; i<image.length; i++) {
-            result += String.format("%32s", Integer.toBinaryString(image[i])).replace(' ', '0');
+            String value = Integer.toBinaryString(image[i]);
+            result += value;
+            convertedLengths[i] = value.length();
         }
         return result;
     }
     
-    private int[] stringToPixels(String image) {
-        String[] splitted = image.split("(?<=\\G.{32})");
-        return Arrays.stream(splitted).mapToInt(pixel -> Integer.parseInt(pixel, 2)).toArray();
+    private int[] stringToPixels(String image, int[] convertedLengths) {
+        int[] pixels = new int[convertedLengths.length];
+        int currentPosition = 0;
+        for (int i = 0; i < convertedLengths.length; i++) {
+            pixels[i] = new BigInteger(image.substring(currentPosition, currentPosition+convertedLengths[i]), 2).intValue();
+            currentPosition += convertedLengths[i];
+        }
+        return pixels;
     }
     
     private BufferedImage deepCopy( BufferedImage image ) {

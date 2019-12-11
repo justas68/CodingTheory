@@ -8,9 +8,9 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="CodingTheory.jar" size="39061" download="eager" />
+    <jar href="CodingTheory.jar" size="38391" download="eager" />
   </resources>
-  <application-desc main-class="codingtheory.gui.NewJFrame"  name="CodingTheory" >
+  <application-desc main-class="codingtheory.gui.NewJFrame1"  name="CodingTheory" >
   </application-desc>
   <update check="always"/>
 </jnlp>
