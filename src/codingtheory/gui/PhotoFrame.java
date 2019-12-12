@@ -19,11 +19,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 
-import codingtheory.logic.Channel;
-import codingtheory.logic.Decoder;
-import codingtheory.logic.Encoder;
-import codingtheory.logic.Matrix;
-import codingtheory.logic.Vector;
+import codingtheory.logic.*;
 
 /**
  * @author tvari
@@ -204,7 +200,7 @@ public class PhotoFrame extends javax.swing.JFrame {
 	private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
 
 		//Išsaugo įvestą klaidos tikimybę, pagal ją sukonfiguroja kanalą
-		double errorProbability = Double.parseDouble(jTextField1.getText());
+		double errorProbability = Double.parseDouble(jTextField1.getText().replace(",", "."));
 		this.channel = new Channel(errorProbability);
 
 		//Pixelius paverčia į dvejatainę eilutę, bei išsaugo, kokią eilutės dalį užima kiekvienas pixelis
@@ -212,7 +208,7 @@ public class PhotoFrame extends javax.swing.JFrame {
 		String pixels = pixelsToString(this.imagePixels, convertedLengths);
 
 		//Siunčia paveikslėlį kanalu jį užkoduojant
-		int[] imageWithEncoding = stringToPixels(sendMessaageWithEncoding(pixels), convertedLengths);
+		int[] imageWithEncoding = stringToPixels(Util.sendMessageWithEncoding(pixels, matrix, encoder, channel, decoder), convertedLengths);
 
 		//Nukopijuoja pradinį paveikslėlį
 		BufferedImage image2 = deepCopy(this.image);
@@ -230,7 +226,7 @@ public class PhotoFrame extends javax.swing.JFrame {
 		pictureWithEncoding.setIcon(new ImageIcon(dimg2));
 
 		//Atlieka tą patį kaip ir viršuje, tik nekoduoja
-		int[] imageWithoutEncoding = stringToPixels(sendImageNoEncoding(pixels), convertedLengths);
+		int[] imageWithoutEncoding = stringToPixels(Util.sendMessageWithNoEncoding(pixels, channel, matrix.getRows()), convertedLengths);
 		BufferedImage image1 = deepCopy(this.image);
 		currentPosition = 0;
 
@@ -246,78 +242,6 @@ public class PhotoFrame extends javax.swing.JFrame {
 
 
 	}//GEN-LAST:event_jButton2ActionPerformed
-
-	//Siunčia paveikslėlį be kodavimo
-	//Priima dvejatainį paveikslėlio pikselių kodą
-	//Gražina iš kanalo gautą paveikslėlių pixelių kodą
-	private String sendImageNoEncoding(String image) {
-		//Išsisaugo kiek bitų reikės nusiųsti.
-		int sentBytes = 0;
-		int bytesToSend = image.length();
-		String receivedMessage = "";
-		//Siunčia bitus atsikirpdamas po reikiamą dydį
-		while (sentBytes <= bytesToSend - this.matrix.getRows()) {
-			String batch = image.substring(sentBytes, sentBytes + this.matrix.getRows());
-			Vector vectorToSend = new Vector(batch);
-			int[] bytesArray = vectorToSend.getArray();
-			channel.sendMessage(bytesArray);
-			receivedMessage += (new Vector(bytesArray)).getArrayAsString();
-			sentBytes += this.matrix.getRows();
-		}
-		//Paskutinių bitų siuntimas, kai jų ilgis neatitinka reikiamo, pridedami 0, kurie po to nukerpami.
-		if (bytesToSend != sentBytes) {
-			String remainingMessage = image.substring(sentBytes);
-			int zeroesAdded = 0;
-			while (remainingMessage.length() < this.matrix.getRows()) {
-				remainingMessage += "0";
-				zeroesAdded++;
-			}
-			Vector vectorToSend = new Vector(remainingMessage);
-			int[] bytesArray = vectorToSend.getArray();
-			channel.sendMessage(bytesArray);
-			receivedMessage += (new Vector(bytesArray)).getArrayAsString();
-			receivedMessage = receivedMessage.substring(0, receivedMessage.length() - zeroesAdded);
-		}
-		return receivedMessage;
-	}
-
-	//Siunčia paveikslėlį su kodavimu
-	//Priima dvejatainį paveikslėlio pikselių kodą
-	//Gražina iš kanalo gautą paveikslėlių pixelių kodą
-	private String sendMessaageWithEncoding(String image) {
-		int sentBytes = 0;
-		int bytesToSend = image.length();
-		String decodedMessage = "";
-		//Siunčia bitus atsikirpdamas po reikiamą dydį
-		//Užkoduoja -> Siunčia į kanalą -> Dekoduoja
-		while (sentBytes <= bytesToSend - this.matrix.getRows()) {
-			String batch = image.substring(sentBytes, sentBytes + this.matrix.getRows());
-			Vector vectorToSend = new Vector(batch);
-			int[] bytesArray = vectorToSend.getArray();
-			int[] encodedArray = encoder.encode(bytesArray).getArray();
-			channel.sendMessage(encodedArray);
-			Vector decodedVector = this.decoder.decodeVector(new Vector(encodedArray));
-			decodedMessage += decodedVector.getArrayAsString();
-			sentBytes += this.matrix.getRows();
-		}
-		//Paskutinių bitų siuntimas, kai jų ilgis neatitinka reikiamo, pridedami 0, kurie po to nukerpami.
-		if (bytesToSend != sentBytes) {
-			String remainingMessage = image.substring(sentBytes);
-			int zeroesAdded = 0;
-			while (remainingMessage.length() < this.matrix.getRows()) {
-				remainingMessage += "0";
-				zeroesAdded++;
-			}
-			Vector vectorToSend = new Vector(remainingMessage);
-			int[] bytesArray = vectorToSend.getArray();
-			int[] encodedArray = encoder.encode(bytesArray).getArray();
-			channel.sendMessage(encodedArray);
-			Vector decodedVector = this.decoder.decodeVector(new Vector(encodedArray));
-			decodedMessage = decodedMessage.substring(0, decodedMessage.length() - zeroesAdded);
-			decodedMessage += decodedVector.getArrayAsString();
-		}
-		return decodedMessage;
-	}
 
 	// Variables declaration - do not modify//GEN-BEGIN:variables
 	//Automatiškai generuotas kodas

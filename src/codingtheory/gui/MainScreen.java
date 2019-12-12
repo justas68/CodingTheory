@@ -346,7 +346,7 @@ public class MainScreen extends javax.swing.JFrame {
 	private void sendButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendButtonActionPerformed
 		String messageString = messageField.getText().replace(" ", "");
 		//Išsaugo klaidos tikimybę ir sukonfiguruoja kanalą
-		double errorProbability = Double.parseDouble(errorProbabilityField.getText());
+		double errorProbability = Double.parseDouble(errorProbabilityField.getText().replace(",", "."));
 		this.channel = new Channel(errorProbability);
 		//Patikrina ar įvesta žinutė yra tinkamo ilgio
 		if (messageString.length() != this.matrix.getRows()) {
@@ -399,11 +399,7 @@ public class MainScreen extends javax.swing.JFrame {
 			java.util.logging.Logger.getLogger(MainScreen.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
 		}
 
-		java.awt.EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				new MainScreen().setVisible(true);
-			}
-		});
+		java.awt.EventQueue.invokeLater(() -> new MainScreen().setVisible(true));
 	}
 
 	//Sąrašą konvertuoja į masyvą

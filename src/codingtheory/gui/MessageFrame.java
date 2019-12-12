@@ -9,11 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import codingtheory.logic.Channel;
-import codingtheory.logic.Decoder;
-import codingtheory.logic.Encoder;
-import codingtheory.logic.Matrix;
-import codingtheory.logic.Vector;
+import codingtheory.logic.*;
 
 /**
  * @author tvari
@@ -237,7 +233,7 @@ public class MessageFrame extends javax.swing.JFrame {
 	//Žinutės siuntimas
 	private void sendMessageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMessageButtonActionPerformed
 		//Išsaugo kanalo klaidos tikimybę, bei sukonfiguruoja kanalą
-		double errorProbability = Double.parseDouble(errorProbabilityField.getText());
+		double errorProbability = Double.parseDouble(errorProbabilityField.getText().replace(",", "."));
 		this.channel = new Channel(errorProbability);
 		//Išsaugo siunčiamą žinutę
 		String message = messageTextField.getText();
@@ -281,32 +277,10 @@ public class MessageFrame extends javax.swing.JFrame {
 	private String sendMessageNoEncoding(String messageToSend) {
 		//Žinutę paverčia į dvejatainę eilutę
 		String message = messageToBytes(messageToSend);
-		int sentBytes = 0;
 		int bytesToSend = message.length();
-		String receivedMessage = "";
-		//Siunčia bitus atsikirpdamas po reikiamą dydį
-		while (sentBytes <= bytesToSend - this.matrix.getRows()) {
-			String batch = message.substring(sentBytes, sentBytes + this.matrix.getRows());
-			Vector vectorToSend = new Vector(batch);
-			int[] bytesArray = vectorToSend.getArray();
-			channel.sendMessage(bytesArray);
-			receivedMessage += (new Vector(bytesArray)).getArrayAsString();
-			sentBytes += this.matrix.getRows();
-		}
-		//Paskutinių bitų siuntimas, kai jų ilgis neatitinka reikiamo, pridedami 0, kurie po to nukerpami.
-		if (bytesToSend != sentBytes) {
-			String remainingMessage = message.substring(sentBytes);
-			int zeroesAdded = 0;
-			while (remainingMessage.length() < this.matrix.getRows()) {
-				remainingMessage += "0";
-				zeroesAdded++;
-			}
-			Vector vectorToSend = new Vector(remainingMessage);
-			int[] bytesArray = vectorToSend.getArray();
-			channel.sendMessage(bytesArray);
-			receivedMessage += (new Vector(bytesArray)).getArrayAsString();
-			receivedMessage = receivedMessage.substring(0, receivedMessage.length() - zeroesAdded);
-		}
+		//Persiunčia žinutę kanalu
+		String receivedMessage = Util.sendMessageWithNoEncoding(message, channel, matrix.getRows());
+		//Atkoduoja žinutę
 		return bytesToMessage(receivedMessage);
 	}
 
@@ -314,37 +288,9 @@ public class MessageFrame extends javax.swing.JFrame {
 	private String sendMessaageWithEncoding(String messageToSend) {
 		//Žinutę paverčia į dvejatainę eilutę
 		String message = messageToBytes(messageToSend);
-		int sentBytes = 0;
-		int bytesToSend = message.length();
-		String decodedMessage = "";
-		//Siunčia bitus atsikirpdamas po reikiamą dydį
-		//Užkoduoja -> Siunčia į kanalą -> Dekoduoja
-		while (sentBytes <= bytesToSend - this.matrix.getRows()) {
-			String batch = message.substring(sentBytes, sentBytes + this.matrix.getRows());
-			Vector vectorToSend = new Vector(batch);
-			int[] bytesArray = vectorToSend.getArray();
-			int[] encodedArray = encoder.encode(bytesArray).getArray();
-			channel.sendMessage(encodedArray);
-			Vector decodedVector = this.decoder.decodeVector(new Vector(encodedArray));
-			decodedMessage += decodedVector.getArrayAsString();
-			sentBytes += this.matrix.getRows();
-		}
-		//Paskutinių bitų siuntimas, kai jų ilgis neatitinka reikiamo, pridedami 0, kurie po to nukerpami.
-		if (bytesToSend != sentBytes) {
-			String remainingMessage = message.substring(sentBytes);
-			int zeroesAdded = 0;
-			while (remainingMessage.length() < this.matrix.getRows()) {
-				remainingMessage += "0";
-				zeroesAdded++;
-			}
-			Vector vectorToSend = new Vector(remainingMessage);
-			int[] bytesArray = vectorToSend.getArray();
-			int[] encodedArray = encoder.encode(bytesArray).getArray();
-			channel.sendMessage(encodedArray);
-			Vector decodedVector = this.decoder.decodeVector(new Vector(encodedArray));
-			decodedMessage = decodedMessage.substring(0, decodedMessage.length() - zeroesAdded);
-			decodedMessage += decodedVector.getArrayAsString();
-		}
+		//Persiunčia žinute kanalu ją koduojant
+		String decodedMessage = Util.sendMessageWithEncoding(message, matrix, encoder, channel, decoder);
+		//Atkoduoja žinutę
 		return bytesToMessage(decodedMessage);
 	}
 
