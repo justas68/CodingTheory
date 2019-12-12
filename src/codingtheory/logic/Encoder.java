@@ -6,17 +6,16 @@
 package codingtheory.logic;
 
 /**
- *
  * @author tvari
  */
 public class Encoder {
-    private final Matrix generatingMatrix;
-    
-    public Encoder(final Matrix generatingMatrix) {
-        this.generatingMatrix = generatingMatrix;
-    }
-    
-    public Vector encode(final int[] message) {
-        return generatingMatrix.multiplicationByVector(message);
-    }
+	private final Matrix generatingMatrix;
+
+	public Encoder(final Matrix generatingMatrix) {
+		this.generatingMatrix = generatingMatrix;
+	}
+
+	public Vector encode(final int[] message) {
+		return generatingMatrix.multiplicationByVector(message);
+	}
 }

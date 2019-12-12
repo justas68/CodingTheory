@@ -6,26 +6,26 @@
 package codingtheory.logic;
 
 /**
- *
  * @author tvari
  */
 public class Channel {
-    private final double p;
-    private final int q;
-    
-    public Channel(final double p) {
-        this.p = p;
-        this.q = 2;
-    }
-    // gražina klaidų vektoriu
-    public int[] sendMessage(int[] word) {
-        int[] failures = new int[word.length];
-        for (int i = 0; i < word.length; i++) {
-            if (Math.random() < p) {
-                word[i] = (word[i]+1) % q;
-                failures[i] = 1;
-            }
-        }
-        return failures;
-    }
+	private final double p;
+	private final int q;
+
+	public Channel(final double p) {
+		this.p = p;
+		this.q = 2;
+	}
+
+	// gražina klaidų vektoriu (žodžio masyvas pasikeičia kviečiančioje klasėje, kadangi jis yra reference tipo)
+	public int[] sendMessage(int[] word) {
+		int[] failures = new int[word.length];
+		for (int i = 0; i < word.length; i++) {
+			if (Math.random() < p) {
+				word[i] = (word[i] + 1) % q;
+				failures[i] = 1;
+			}
+		}
+		return failures;
+	}
 }
