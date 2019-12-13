@@ -268,7 +268,7 @@ public class PhotoFrame extends javax.swing.JFrame {
 		return result;
 	}
 
-	//Dvejatainę eilutę konvertuoja į pixelių masyvą, naudodamas masyvą, kuris
+	//Dvejatainę eilutę konvertuoja į pixelių masyvą, naudodamas masyvą, kuris nurodo kokio ilgio yra kiekvienas pixelis
 	private int[] stringToPixels(String image, int[] convertedLengths) {
 		int[] pixels = new int[convertedLengths.length];
 		int currentPosition = 0;
