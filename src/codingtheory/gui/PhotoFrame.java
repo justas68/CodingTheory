@@ -44,6 +44,7 @@ public class PhotoFrame extends javax.swing.JFrame {
 		initComponents();
 
 		setDefaultCloseOperation(HIDE_ON_CLOSE);
+		this.setTitle("Paveikslėlio persiuntimo langas");
 
 	}
 

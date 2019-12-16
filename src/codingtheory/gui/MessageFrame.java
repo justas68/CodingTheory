@@ -32,6 +32,7 @@ public class MessageFrame extends javax.swing.JFrame {
 		initComponents();
 		initMatrixField();
 		setDefaultCloseOperation(HIDE_ON_CLOSE);
+		this.setTitle("Žinutės persiuntimo langas");
 	}
 
 	private void initMatrixField() {
