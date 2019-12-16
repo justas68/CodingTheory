@@ -39,6 +39,7 @@ public class Util {
 										  Matrix matrix, Encoder encoder, Channel channel, Decoder decoder) {
 		int sentBytes = 0;
 		String messageToSend = message;
+		//Patikrinam žinutės ilgį, jeigu trūkstą simbolių pridedam '0', prieš grąžinant rezultatą juos nukirpsime
 		int appendedZeroes = messageToSend.length() % matrix.getRows();
 		if (appendedZeroes != 0) {
 			appendedZeroes = matrix.getRows() - appendedZeroes;
@@ -48,7 +49,7 @@ public class Util {
 		String decodedMessage = "";
 		//Siunčia bitus atsikirpdamas po reikiamą dydį
 		//Užkoduoja -> Siunčia į kanalą -> Dekoduoja
-		while (sentBytes < bytesToSend-1) {
+		while (sentBytes < bytesToSend) {
 			String batch = messageToSend.substring(sentBytes, sentBytes + matrix.getRows());
 			Vector vectorToSend = new Vector(batch);
 			int[] bytesArray = vectorToSend.getArray();
@@ -66,13 +67,14 @@ public class Util {
 		int sentBytes = 0;
 		String receivedMessage = "";
 		String messageToSend = message;
+		//Patikrinam žinutės ilgį, jeigu trūkstą simbolių pridedam '0', prieš grąžinant rezultatą juos nukirpsime
 		int appendedZeroes = messageToSend.length() % batchSize;
 		if (appendedZeroes != 0) {
 			appendedZeroes = batchSize - appendedZeroes;
 			messageToSend += repeatString("0", appendedZeroes);
 		}
 		int bytesToSend = messageToSend.length();
-		while (sentBytes < bytesToSend-1) {
+		while (sentBytes < bytesToSend) {
 			String batch = messageToSend.substring(sentBytes, sentBytes + batchSize);
 			Vector vectorToSend = new Vector(batch);
 			int[] bytesArray = vectorToSend.getArray();

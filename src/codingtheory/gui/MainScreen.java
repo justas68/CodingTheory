@@ -283,6 +283,7 @@ public class MainScreen extends javax.swing.JFrame {
 	//Išsaugo parametrus
 	private void IssaugotiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_IssaugotiActionPerformed
 		//Paima parametrus iš formos
+		long start = System.nanoTime();
 		String matrix = jTextArea1.getText();
 		int n = Integer.parseInt(jTextField1.getText());
 		int k = Integer.parseInt(jTextField2.getText());
@@ -331,6 +332,7 @@ public class MainScreen extends javax.swing.JFrame {
 			this.encoder = new Encoder(this.matrix);
 			this.decoder = new Decoder(this.matrix);
 		}
+		System.out.println(this.matrix.getColumns() + " took " + (System.nanoTime() - start)/1000000 + "ms");
 		JOptionPane.showMessageDialog(null, "Parametrai sėkmingai išsaugoti");
 		//Atidaro kitus langus
 		MessageFrame messageFrame = new MessageFrame(this.matrix, this.encoder, this.decoder);
